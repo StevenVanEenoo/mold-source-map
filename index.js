@@ -8,7 +8,7 @@ var convert = require('convert-source-map')
 function extractComment (source) {
   var m = source.match(convert.commentRegex);
   return m ? m.pop() : null;
-} 
+}
 
 function Molder(sourcemap) {
   this.sourcemap = sourcemap;
@@ -59,11 +59,15 @@ function mapToTransform(fnKey, mapFn) {
   var source = '';
 
   function write (data) { source += data; }
-  function end () { 
-    var sourceMolder = fromSource(source);
-    sourceMolder[fnKey](mapFn);
-    this.queue(sourceMolder.replaceComment());
-    this.queue(null);
+  function end () {
+    if(source) {
+      var sourceMolder = fromSource(source);
+      sourceMolder[fnKey](mapFn);
+      this.queue(sourceMolder.replaceComment());
+      this.queue(null);
+    } else {
+      this.emit('end');
+    }
   }
 
   return through(write, end);
@@ -85,7 +89,7 @@ exports.transform = function (fn) {
   var source = '';
 
   function write (data) { source += data; }
-  function end () { 
+  function end () {
     var sourceMolder = fromSource(source);
 
     function queue(adaptedComment) {
@@ -101,7 +105,7 @@ exports.transform = function (fn) {
     } else {
       throw new Error('Function passed to transform needs to take 1 or 2 parameters.');
     }
-  }   
+  }
 
   return through(write, end);
 };
@@ -127,4 +131,3 @@ exports.transformSources = function (map) {
 exports.transformSourcesRelativeTo = function (root) {
   return exports.transformSources(mapPathRelativeTo(root));
 };
-
